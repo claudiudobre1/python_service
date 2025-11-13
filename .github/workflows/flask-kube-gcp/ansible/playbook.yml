@@ -1,0 +1,16 @@
+- name: Configure and deploy Flask app on GKE
+  hosts: gke
+  tasks:
+    - name: Configure kubectl credentials
+      shell: gcloud container clusters get-credentials flask-cluster --zone=europe-central2-a
+
+    - name: Deploy Flask app
+      shell: |
+        kubectl apply -f kubernetes/deployment.yaml
+        kubectl apply -f kubernetes/service.yaml
+
+    - name: Install Prometheus & Grafana
+      shell: |
+        kubectl create namespace monitoring || true
+        kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/setup/
+        kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/
