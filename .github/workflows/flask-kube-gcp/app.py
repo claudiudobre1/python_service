@@ -44,7 +44,7 @@ def run_game():
             break
 
         result = check_guess(user_input, secret_number)
-        attempts += 1
+        attempts += 3
 
         if result == 'low':
             print("Too low! Try again.")
