@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    server {
+      listen 80;
+
+      # frontend HTML
+      location / {
+        root /usr/share/nginx/html;
+        try_files $uri /index.html;
+      }
+
+      # API → game service
+      location /api/guess {
+        proxy_pass http://game-service:8000/guess;
+      }
+
+      location /api/reset {
+        proxy_pass http://game-service:8000/reset;
+      }
+
+      # API → score service
+      location /api/highscore {
+        proxy_pass http://score-service:8001/highscore;
+      }
+    }

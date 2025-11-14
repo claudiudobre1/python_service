@@ -1,2 +1,5 @@
 pylint.yml
 TODO.txt
+node_modules/
+build/
+dist/
