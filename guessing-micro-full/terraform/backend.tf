@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "tf-state-flask-kube-joc"   # schimbă dacă vrei alt nume
+    bucket = "INLOCUIESTE_CU_BUCKETUL_TAU"
     prefix = "terraform/state"
   }
 }

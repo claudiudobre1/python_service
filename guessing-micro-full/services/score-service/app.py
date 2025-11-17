@@ -1,40 +1,72 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-import sqlite3
-from pathlib import Path
+from flask import Flask, request, jsonify
+import psycopg2
+import os
 
-DB_PATH = Path("/data/score.db")
-DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+app = Flask(__name__)
 
-def get_conn():
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
+DB_HOST = os.getenv("DB_HOST", "postgres")
+DB_NAME = os.getenv("DB_NAME", "scoredb")
+DB_USER = os.getenv("DB_USER", "scoreuser")
+DB_PASS = os.getenv("DB_PASS", "secret123")
 
+def get_db():
+    return psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS
+    )
+
+# ensure table exists
 def init_db():
-    conn = get_conn()
-    conn.execute("CREATE TABLE IF NOT EXISTS scores(id INTEGER PRIMARY KEY, score INTEGER, ts DATETIME DEFAULT CURRENT_TIMESTAMP)")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS highscores (
+            id SERIAL PRIMARY KEY,
+            player VARCHAR(255),
+            attempts INT NOT NULL
+        );
+    """)
     conn.commit()
+    cur.close()
     conn.close()
 
-init_db()
+@app.route("/highscore", methods=["GET"])
+def get_highscore():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT player, attempts FROM highscores ORDER BY attempts ASC LIMIT 1;")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
 
-app = FastAPI(title="Score Service")
+    if row:
+        return jsonify({"player": row[0], "best_attempts": row[1]})
+    else:
+        return jsonify({"player": None, "best_attempts": None})
 
-class ScoreIn(BaseModel):
-    score: int
+@app.route("/highscore", methods=["POST"])
+def submit_score():
+    data = request.json
+    player = data.get("player", "Anonim")
+    attempts = data.get("attempts")
 
-@app.post("/score")
-def save_score(payload: ScoreIn):
-    conn = get_conn()
-    conn.execute("INSERT INTO scores(score) VALUES (?)", (payload.score,))
+    if attempts is None:
+        return jsonify({"error": "Missing attempts"}), 400
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO highscores (player, attempts) VALUES (%s, %s);",
+        (player, attempts)
+    )
     conn.commit()
+    cur.close()
     conn.close()
-    return {"ok": True}
 
-@app.get("/scores")
-def get_scores(limit: int = 10):
-    conn = get_conn()
-    rows = conn.execute("SELECT * FROM scores ORDER BY ts DESC LIMIT ?", (limit,)).fetchall()
-    conn.close()
-    return {"scores":[dict(r) for r in rows]}
+    return jsonify({"message": "Score saved!"})
+
+if __name__ == "__main__":
+    init_db()
+    app.run(host="0.0.0.0", port=8001)
