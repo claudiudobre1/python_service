@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Number Guessing Game</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center;
+            margin-top: 50px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #highscore {
+            margin-top: 20px;
+            color: green;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎮 Number Guessing Game</h1>
+
+<p>Ghiceste numărul între 1 și 100!</p>
+
+<input id="guessInput" type="number" min="1" max="100" placeholder="Numărul tău">
+<button onclick="sendGuess()">Trimite</button>
+
+<div id="result"></div>
+<div id="highscore"></div>
+
+<script>
+async function sendGuess() {
+    const guess = document.getElementById("guessInput").value;
+
+    const response = await fetch("http://34.116.157.63/game/guess?number=" + guess);
+    const data = await response.json();
+
+    document.getElementById("result").innerText = data.message;
+
+    // cere scorul
+    const score = await fetch("http://34.116.157.63/score/highscore");
+    const scoreData = await score.json();
+
+    document.getElementById("highscore").innerText = "🏆 Highscore: " + scoreData.highscore;
+}
+</script>
+
+</body>
+</html>

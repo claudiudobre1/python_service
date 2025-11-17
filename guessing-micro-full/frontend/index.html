@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jocul de Ghicit Numere</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-xl">
+    <h1 class="text-2xl font-bold mb-4">Jocul de Ghicit Numere</h1>
+    <p class="text-sm text-gray-600 mb-4">Ghiceste numărul între 1 și 100.</p>
+
+    <div class="flex gap-2 mb-4">
+      <input id="guessInput" type="number" placeholder="Introdu un număr" class="flex-1 border rounded px-3 py-2" />
+      <button id="guessBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Ghiceste</button>
+      <button id="resetBtn" class="bg-gray-200 px-4 py-2 rounded">Reset</button>
+    </div>
+
+    <div id="result" class="text-lg font-medium text-gray-800 mb-4"></div>
+    <div id="attempts" class="text-sm text-gray-500"></div>
+
+    <script>
+      const apiRoot = ""; // lasă gol pentru același host; sau pune URL complet dacă front/back sunt separate
+
+      async function sendGuess() {
+        const value = parseInt(document.getElementById("guessInput").value, 10);
+        if (isNaN(value)) {
+          document.getElementById("result").innerText = "Introdu un număr valid.";
+          return;
+        }
+        const resp = await fetch(apiRoot + "/guess", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value })
+        });
+        const data = await resp.json();
+        if (data.result === "low") document.getElementById("result").innerText = "Prea mic!";
+        else if (data.result === "high") document.getElementById("result").innerText = "Prea mare!";
+        else if (data.result === "correct") document.getElementById("result").innerText = `Corect! Numărul era ${data.number}.`;
+        document.getElementById("attempts").innerText = data.attempts ? `Încercări: ${data.attempts}` : "";
+      }
+
+      async function resetGame(){
+        await fetch(apiRoot + "/reset", { method: "POST" });
+        document.getElementById("result").innerText = "Joc resetat.";
+        document.getElementById("attempts").innerText = "";
+      }
+
+      document.getElementById("guessBtn").addEventListener("click", sendGuess);
+      document.getElementById("resetBtn").addEventListener("click", resetGame);
+    </script>
+  </div>
+</body>
+</html>

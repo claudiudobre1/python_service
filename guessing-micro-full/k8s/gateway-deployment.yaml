@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/gateway:v1
+        ports:
+        - containerPort: 8000
+        env:
+        - name: GAME_URL
+          value: "http://game-service:8000"
+        - name: SCORE_URL
+          value: "http://score-service:8001"

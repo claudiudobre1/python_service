@@ -1,196 +1,197 @@
+# 🎮 Guessing Game -- Microservices on Kubernetes (GKE)
 
-# 🎯 Jocul de Ghicit Numere — Automatizare DevOps pe Google Cloud Platform (GCP)
+Acest proiect implementează un sistem de microservicii pentru un joc de
+„Guess the Number", folosind:
 
-Acest proiect conține un simplu **joc în Python de ghicit numere**, implementat printr-o **arhitectură DevOps completă** care rulează pe **Google Cloud Platform (GCP)**.
+-   **Python Flask** -- Gateway + Game Service + Score Service\
+-   **React** -- Frontend\
+-   **PostgreSQL** -- Bază de date pentru scoruri\
+-   **Docker** -- Containerizare\
+-   **Kubernetes (GKE)** -- Orchestrare\
+-   **Artifact Registry** -- Stocarea imaginilor Docker\
+-   **Ingress (NGINX)** -- expunere externă\
+-   **CI/CD cu GitHub Actions** -- build + push + deploy automat
 
-Deși aplicația rulează interactiv în consolă, scopul proiectului este de a demonstra cum se pot integra:
-- 🐳 **Docker** — pentru containerizarea aplicației  
-- ☁️ **Kubernetes (GKE)** — pentru orchestrarea containerelor  
-- 🏗️ **Terraform** — pentru crearea infrastructurii  
-- ⚙️ **Ansible** — pentru configurarea mediilor  
-- 🔁 **GitHub Actions** — pentru pipeline-ul CI/CD automat  
-- 📊 **Prometheus + Grafana** — pentru monitorizare  
-- 💰 **GCP Recommender API** — pentru optimizarea costurilor
+## 🧩 Arhitectura aplicației
 
----
+``` mermaid
+flowchart TB
 
-## 🧩 Despre joc
+User -->|HTTP| Ingress
 
-**Jocul de ghicit numere** generează un număr aleator între **1 și 100**.  
-Jucătorul trebuie să-l ghicească, iar programul oferă feedback la fiecare încercare (`Prea mic`, `Prea mare`, `Corect!`).
+Ingress -->|/api| Gateway
+Ingress -->|/| Frontend
 
-Este un exemplu simplu, dar util pentru a demonstra un flux DevOps complet — de la cod sursă până la rulare în Kubernetes.
+Gateway --> GameService
+Gateway --> ScoreService
 
-### 🎮 Exemplu de rulare
-
-```
---- Bine ai venit la Jocul de Ghicit Numere! ---
-Ghiceste un număr între 1 și 100.
-Introdu numărul tău: 50
-Prea mic! Încearcă din nou.
-Introdu numărul tău: 75
-Prea mare! Încearcă din nou.
-Introdu numărul tău: 68
-Felicitări! Ai ghicit numărul 68 în 9 încercări.
+ScoreService --> PostgreSQL
 ```
 
----
+## 🌐 IP-uri & URL-uri utile
 
-## 📂 Structura proiectului
+  Serviciu                             Adresă / URL
+  ------------------------------------ ---------------------------------
+  **Ingress Public IP**                `http://34.116.141.233`
+  **Frontend direct (LoadBalancer)**   `http://34.116.172.10`
+  **API extern via Ingress**           `http://34.116.141.233/api/...`
+  **Gateway intern**                   `gateway:8000`
+  **Game Service intern**              `game-service:8000`
+  **Score Service intern**             `score-service:8001`
+  **Postgres service**                 `postgres:5432`
 
-```
-flask-kube-gcp/
-├── app.py                     # Codul principal al jocului
-├── Dockerfile                 # Instrucțiuni pentru imaginea Docker
-├── requirements.txt           # Dependențe Python
-├── kubernetes/
-│   ├── deployment.yaml        # Manifestul Kubernetes pentru aplicație
-│   └── service.yaml           # Manifestul Kubernetes pentru serviciu
-├── terraform/
-│   ├── main.tf                # Infrastructura GKE + Artifact Registry
-│   ├── variables.tf
-│   └── outputs.tf
-├── ansible/
-│   ├── inventory.ini
-│   └── playbook.yml
-└── .github/
-    └── workflows/
-        └── deploy.yaml        # Workflow GitHub Actions (CI/CD)
-```
+## 📁 Structura proiectului
 
----
+    guessing-micro-full/
+    │
+    ├── frontend/               
+    ├── gateway/               
+    ├── services/
+    │   ├── game-service/
+    │   └── score-service/
+    │
+    ├── k8s/
+    │   ├── frontend-deployment.yaml
+    │   ├── gateway-deployment.yaml
+    │   ├── game-service-deployment.yaml
+    │   ├── score-service-deployment.yaml
+    │   ├── postgres-deployment.yaml
+    │   ├── ingress.yaml
+    │   └── postgres-secret.yaml
+    │
+    └── .github/workflows/
+        ├── build-and-deploy-frontend.yml
+        ├── build-and-deploy-gateway.yml
+        ├── build-and-deploy-game-service.yml
+        └── build-and-deploy-score-service.yml
 
-## 🏗️ Arhitectura DevOps
+## 🐳 Docker -- Build & Run (Local)
 
-```
-Aplicație Python (consolă)
-     ↓
-Docker Image
-     ↓
-Artifact Registry (GCP)
-     ↓
-GKE Cluster (Terraform)
-     ↓
-CI/CD (GitHub Actions)
-     ↓
-Configurare (Ansible)
-     ↓
-Monitorizare + Optimizare costuri
-```
+### Gateway
 
----
-
-## ⚙️ Cerințe preliminare
-
-Înainte de rulare, ai nevoie de:
-
-- Un **proiect GCP** cu facturare activată  
-- Un **Service Account** cu următoarele roluri:
-  - `roles/container.admin`
-  - `roles/artifactregistry.admin`
-  - `roles/compute.viewer`
-  - `roles/iam.serviceAccountUser`
-- (Opțional) Unelte locale instalate:
-  - [Docker](https://docs.docker.com/)
-  - [Terraform](https://developer.hashicorp.com/terraform/downloads)
-  - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
-  - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-  - [Ansible](https://www.ansible.com/)
-
----
-
-## 🎯 Rulare locală
-
-```bash
-python app.py
+``` bash
+docker build -t gateway:local ./gateway
+docker run -p 8000:8000 gateway:local
 ```
 
-Pentru a ieși din joc:
-```
-Introdu numărul tău: quit
-```
+### Game Service
 
----
-
-## 🐳 Utilizare Docker
-
-### Construirea imaginii Docker:
-```bash
-docker build -t number-guess-game .
+``` bash
+docker build -t game-service:local ./services/game-service
+docker run -p 8000:8000 game-service:local
 ```
 
-### Rulare interactivă:
-```bash
-docker run -it number-guess-game
+### Score Service
+
+``` bash
+docker build -t score-service:local ./services/score-service
+docker run -p 8001:8001 score-service:local
 ```
 
----
+### Frontend
 
-## ☁️ Automatizare CI/CD cu GitHub Actions
-
-Pipeline-ul GitHub Actions (`.github/workflows/deploy.yaml`) execută automat:
-
-1. Crearea infrastructurii cu **Terraform**  
-2. Construirea și trimiterea imaginii Docker către **Artifact Registry**  
-3. Deploy în **Google Kubernetes Engine (GKE)**  
-4. Configurare și monitorizare prin **Ansible**
-
-### Configurare:
-
-1. Publică acest repository pe contul tău GitHub.  
-2. Adaugă următoarele **GitHub Secrets**:
-   - `GCP_PROJECT_ID`
-   - `GCP_SA_KEY` (conținutul fișierului JSON al service account-ului)
-3. Fă *push* pe branch-ul `main` — pipeline-ul va porni automat.
-
----
-
-## 📊 Monitorizare cu Prometheus & Grafana
-
-Pentru a instala sistemul de monitorizare:
-```bash
-ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
+``` bash
+docker build -t frontend:local ./frontend
+docker run -p 80:80 frontend:local
 ```
 
-Apoi accesează Grafana:
-```bash
-kubectl port-forward svc/grafana 3000:3000 -n monitoring
-```
-🔗 [http://localhost:3000](http://localhost:3000)  
-Login implicit: `admin / admin`
+## ☸️ Kubernetes -- Comenzi importante
 
----
+### Deploy complet:
 
-## 💰 Optimizarea costurilor în GCP
-
-Activează API-ul Recommender:
-```bash
-gcloud services enable recommender.googleapis.com
+``` bash
+kubectl apply -f k8s/
 ```
 
-Afișează recomandări:
-```bash
-gcloud recommender recommendations list   --recommender=google.compute.instance.MachineTypeRecommender
+### Verificare resurse:
+
+``` bash
+kubectl get pods -o wide
+kubectl get svc
+kubectl get ingress
 ```
 
----
+### Logs:
 
-## 🧹 Curățare resurse
-
-Pentru a șterge întreaga infrastructură:
-```bash
-terraform -chdir=terraform destroy -auto-approve
+``` bash
+kubectl logs -l app=gateway --tail=200
 ```
 
----
+### Debug DNS intern:
 
-## 🧾 Probleme frecvente
+``` bash
+kubectl exec -it <gateway-pod> -- getent hosts score-service
+```
 
-| Problemă | Cauză | Soluție |
-|-----------|--------|----------|
-| `EOFError: EOF when reading a line` | Aplicația e interactivă (`input()` în Docker) | Rulează cu `docker run -it` |
-| `failed to read dockerfile` | Lipsă fișier `Dockerfile` în director | Verifică locația proiectului |
-| `permission denied` | Lipsă roluri în Service Account | Adaugă rolurile GKE și Artifact Registry |
-| Aplicația nu pornește în GKE | Imagine greșită în deployment.yaml | Actualizează cu numele imaginii corecte |
+### Test API:
 
+``` bash
+kubectl exec -it <gateway-pod> -- python3 - <<EOF
+import requests
+print(requests.get("http://score-service:8001/highscore").text)
+EOF
+```
 
+## 🚀 Deploy pe Google Cloud (GKE + Artifact Registry)
+
+### Autentificare Docker:
+
+``` bash
+gcloud auth configure-docker europe-central2-docker.pkg.dev
+```
+
+### Build:
+
+``` bash
+docker build -t europe-central2-docker.pkg.dev/PROJECT/my-repo/gateway:v1 .
+```
+
+### Push:
+
+``` bash
+docker push europe-central2-docker.pkg.dev/PROJECT/my-repo/gateway:v1
+```
+
+### Update deployment:
+
+``` bash
+kubectl set image deployment/gateway gateway=europe-central2-docker.pkg.dev/PROJECT/my-repo/gateway:v1
+```
+
+## 🔄 CI/CD -- GitHub Actions
+
+Fiecare microserviciu are propriul pipeline.
+
+### Exemple secretes necesare:
+
+-   `GCP_PROJECT_ID`
+-   `GCP_SA_KEY`
+-   `GKE_CLUSTER`
+-   `GKE_ZONE`
+
+## 🛠 Troubleshooting
+
+### ❌ Score Service -- "password authentication failed"
+
+``` bash
+kubectl delete secret postgres-secret
+kubectl apply -f k8s/postgres-secret.yaml
+kubectl rollout restart deployment score-service
+```
+
+### ❌ Ingress returnează 404
+
+Verifică:
+
+``` bash
+kubectl describe ingress guessing-app-ingress
+```
+
+## 🌍 URL-uri finale
+
+  Endpoint          URL
+  ----------------- -------------------------------------
+  Frontend          http://34.116.172.10
+  API → Highscore   http://34.116.141.233/api/highscore
+  API → Guess       http://34.116.141.233/api/guess
+  API → Reset       http://34.116.141.233/api/reset

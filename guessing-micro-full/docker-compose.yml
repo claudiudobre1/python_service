@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  game-service:
+    build: ./services/game-service
+    container_name: game-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - score-service
+    environment:
+      - SCORE_SERVICE_URL=http://score-service:8001
+
+  score-service:
+    build: ./services/score-service
+    container_name: score-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/data

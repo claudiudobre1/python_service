@@ -1,0 +1,15 @@
+- name: Configure GKE and deploy services
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Configure kubectl credentials
+      shell: |
+        gcloud container clusters get-credentials {{ lookup('env','TF_VAR_cluster_name') | default('guessing-cluster') }} --zone={{ lookup('env','TF_VAR_zone') | default('europe-central2-a') }}
+      args:
+        executable: /bin/bash
+
+    - name: Apply Kubernetes manifests
+      shell: |
+        kubectl apply -f k8s/
+      args:
+        executable: /bin/bash

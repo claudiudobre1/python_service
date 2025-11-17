@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: score-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: score-service
+  template:
+    metadata:
+      labels:
+        app: score-service
+    spec:
+      containers:
+      - name: score
+        image: europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/score-service:v1
+        ports:
+        - containerPort: 8001
+        volumeMounts:
+          - name: data
+            mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: score-service
+spec:
+  selector:
+    app: score-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+  type: ClusterIP

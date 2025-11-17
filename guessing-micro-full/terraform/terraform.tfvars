@@ -1,0 +1,5 @@
+project_id   = "flask-kube-joc"
+region       = "europe-central2"
+zone         = "europe-central2-a"
+cluster_name = "guessing-cluster"
+repo_name    = "my-repo"
