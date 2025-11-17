@@ -1,0 +1,33 @@
+name: Build and Deploy Frontend
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/build-and-deploy-frontend.yaml"
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - run: gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet
+
+      - run: docker build -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/frontend:latest ./frontend
+
+      - run: docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/frontend:latest
+
+      - run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER }} \
+          --zone ${{ secrets.GKE_ZONE }} \
+          --project ${{ secrets.GCP_PROJECT_ID }}
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-service.yaml
