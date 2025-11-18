@@ -27,7 +27,7 @@ jobs:
       run: |
         docker build \
           -t europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/gateway:latest \
-          ./guessing-micro-full/services/gateway
+          ./guessing-micro-full/gateway
 
         docker push \
           europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/gateway:latest
