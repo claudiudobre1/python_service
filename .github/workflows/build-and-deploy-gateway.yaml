@@ -4,7 +4,9 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "guessing-micro-full/services/gateway/**"
+      - "guessing-micro-full/gateway/**"
+      - ".github/workflows/build-and-deploy-gateway.yaml"
+
 
 jobs:
   build:
