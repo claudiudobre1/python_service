@@ -4,6 +4,23 @@ import requests
 
 app = Flask(__name__)
 
+# 🔥 Log every incoming request
+@app.before_request
+def log_request_info():
+    print("📥 Incoming request:")
+    print("  Method:", request.method)
+    print("  Path:", request.path)
+    print("  IP:", request.remote_addr)
+    print("  User-Agent:", request.headers.get("User-Agent"))
+    print("  Body:", request.get_data())
+
+# 🚫 Block invalid GET/PUT/DELETE for POST-only endpoints
+@app.before_request
+def block_invalid_methods():
+    protected = ["/api/guess", "/api/reset"]
+    if request.path in protected and request.method != "POST":
+        return jsonify({"error": "405 – Only POST allowed"}), 405
+
 GAME_URL = os.getenv("GAME_URL", "http://game-service:8000")
 SCORE_URL = os.getenv("SCORE_URL", "http://score-service:8001")
 
@@ -26,7 +43,6 @@ def api_highscore():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/api/highscore", methods=["POST"])
 def api_submit_score():
     data = request.json
@@ -35,7 +51,6 @@ def api_submit_score():
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)

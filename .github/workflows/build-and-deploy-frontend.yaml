@@ -30,6 +30,11 @@ jobs:
         docker push \
           europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/frontend:latest
 
+    - name: Install GKE Auth Plugin
+      run: |
+        gcloud components update --quiet
+        gcloud components install gke-gcloud-auth-plugin --quiet
+
     - name: Configure kubectl
       run: |
         export USE_GKE_GCLOUD_AUTH_PLUGIN=True
@@ -37,8 +42,6 @@ jobs:
           --zone europe-central2-a \
           --project flask-kube-joc
 
-
     - name: Deploy to GKE
       run: |
         kubectl rollout restart deployment frontend-deployment
-
