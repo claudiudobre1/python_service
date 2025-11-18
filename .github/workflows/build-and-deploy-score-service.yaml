@@ -34,7 +34,7 @@ jobs:
     - name: Configure kubectl
       run: |
         gcloud container clusters get-credentials guessing-cluster \
-          --zone europe-central2-b \
+          --zone europe-central2-a \
           --project flask-kube-joc
 
     - name: Deploy to GKE
