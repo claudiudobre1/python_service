@@ -2,33 +2,40 @@ name: Build & Deploy Gateway
 
 on:
   push:
+    branches: [ "main" ]
     paths:
-      - "gateway/**"
-      - ".github/workflows/build-and-deploy-gateway.yaml"
-    branches: ["main"]
+      - "guessing-micro-full/services/gateway/**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
+    - uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        token_format: "access_token"
 
-      - run: gcloud auth configure-docker europe-central2-docker.pkg.dev
+    - name: Configure Docker
+      run: gcloud auth configure-docker europe-central2-docker.pkg.dev --quiet
 
-      - run: docker build -t europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/gateway:latest ./gateway
+    - name: Build & Push
+      run: |
+        docker build \
+          -t europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/gateway:latest \
+          ./guessing-micro-full/services/gateway
 
-      - run: docker push europe-central2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/gateway:latest
+        docker push \
+          europe-central2-docker.pkg.dev/flask-kube-joc/my-repo/gateway:latest
 
-      - run: |
-          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER }} \
-          --zone ${{ secrets.GKE_ZONE }} \
-          --project ${{ secrets.GCP_PROJECT_ID }}
-          kubectl apply -f k8s/gateway-deployment.yaml
-          kubectl apply -f k8s/gateway-service.yaml
+    - name: Configure kubectl
+      run: |
+        gcloud container clusters get-credentials guessing-cluster \
+          --zone europe-central2-b \
+          --project flask-kube-joc
+
+    - name: Deploy to GKE
+      run: |
+        kubectl rollout restart deployment gateway
